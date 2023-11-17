@@ -1,0 +1,4 @@
+{
+    "DosyaAdi":"deneme.txt",
+    "KlasorYolu":"Duvarım"
+}
