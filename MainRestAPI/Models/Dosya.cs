@@ -1,8 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using System.Collections.Generic;
-using System.IO;
-
-namespace MainRestApi.Models
+﻿namespace MainRestApi.Models
 {
     public class Dosya
     {
@@ -15,10 +11,10 @@ namespace MainRestApi.Models
 
     public class DosyaYayinlaBilgi
     {
-     
+
         public string DosyaAdi { get; set; }
-        public string KlasorYolu { get; set;}
+        public string KlasorYolu { get; set; }
     }
 
-    
+
 }

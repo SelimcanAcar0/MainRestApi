@@ -3,19 +3,13 @@ using NLog;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Runtime.Remoting.Contexts;
-using System.Security.Policy;
-using System.Text;
-using System.Threading;
 using System.Web.Http;
-using System.Web.ModelBinding;
 
 namespace MainRestApi.Controllers
 {
-    
+
     public class StajController : ApiController
     {
         private const int mb1 = 1024 * 1024;
@@ -27,7 +21,7 @@ namespace MainRestApi.Controllers
         public static readonly HashSet<char> yasakliKarakterler
             = new HashSet<char>() { '*', '"', '/', '\'', '<', '>', ':', '|', '?' };
 
-        private static  Logger logger = LogManager.GetCurrentClassLogger();
+        private static Logger logger = LogManager.GetCurrentClassLogger();
 
         private Ticket ticketGlobal = new Ticket
         {
@@ -35,12 +29,12 @@ namespace MainRestApi.Controllers
             KullaniciAdi = "Test",
             Sonuc = true
         };
-        
-        public static void logKayit(Exception hata,string mesaj)
+
+        public static void logKayit(Exception hata, string mesaj)
         {
-            logger.Error(hata.Message );
+            logger.Error(hata.Message + " | " + mesaj);
         }
-        public static void scriptEncodeInput(object input)
+        private static void scriptEncodeInput(object input)
         {
             if (string.IsNullOrEmpty(input.ToString()))
             {
@@ -49,10 +43,10 @@ namespace MainRestApi.Controllers
         }
 
 
-        [HttpGet]
+        [HttpPost]
         public string MevcutKlasoruAl()
         {
-            string webRootPath = System.Web.Hosting.HostingEnvironment.MapPath("\\Content\\");
+            string webRootPath = "metutKlasor";//System.Web.Hosting.HostingEnvironment.MapPath("\\Content\\");
             return webRootPath;
         }
 
@@ -68,13 +62,16 @@ namespace MainRestApi.Controllers
         }
 
         #region KLASÖR İŞLEMLERİ
-        [HttpGet]
-        public DonenSonuc KlasorListesiGetir(Guid ticketID, string klasorYolu)
+        [HttpPost]
+        public DonenSonuc KlasorListesiGetir([FromBody] KlasorListesiModel klasorListesiModel)
         {
             List<object> klasorListesi = new List<object>();
             DonenSonuc donenSonuc;
             string[] GelenKlasorler;
-          
+            Guid ticketID = klasorListesiModel.ticketID;
+            string klasorYolu = klasorListesiModel.klasorYolu;
+
+
             try
             {
                 if (ticketID != ticketGlobal.ID || string.IsNullOrEmpty(ticketID.ToString()))
@@ -90,10 +87,10 @@ namespace MainRestApi.Controllers
                 {
                     donenSonuc = new DonenSonuc
                     {
-                        Mesaj = "klasor Yolu Boş bırakılmış",
-                        Sonuc = false
+                        Mesaj = "Content klasörü getirildi",
+                        Sonuc = true
                     };
-                    return donenSonuc;
+                    klasorYolu = "";
                 }
 
                 scriptEncodeInput(ticketID);
@@ -101,7 +98,7 @@ namespace MainRestApi.Controllers
                 scriptEncodeInput(klasorYolu);
 
                 klasorYolu = rootPath + klasorYolu.Trim();
-                
+
 
                 if (!Directory.Exists(klasorYolu))
                 {
@@ -179,10 +176,10 @@ namespace MainRestApi.Controllers
                 {
                     donenSonuc = new DonenSonuc
                     {
-                        Mesaj = "klasor Yolu Boş bırakılmış",
-                        Sonuc = false
+                        Mesaj = "Content klasörü getirildi",
+                        Sonuc = true
                     };
-                    return donenSonuc;
+                    klasorYolu = "";
                 }
 
                 klasorYolu = rootPath + klasorYolu.Trim();
@@ -646,7 +643,7 @@ namespace MainRestApi.Controllers
                 {
                     Mesaj = "Metod Çalıştırılırken Bir Sorunla Karşılaşıldı"
                 };
-                logKayit(e , "DosyaOlustur metodunda hata oluştu");
+                logKayit(e, "DosyaOlustur metodunda hata oluştu");
                 return donenSonuc;
             }
             return donenSonuc;
@@ -931,19 +928,22 @@ namespace MainRestApi.Controllers
         public DonenSonuc DosyaMetaDataKaydiOlustur()
         {
             DonenSonuc donenSonuc;
-            try {
-
-            string dosyaId = Guid.NewGuid().ToString();
-            string tempKlasorYolu = Path.Combine(rootPath ,"temp", dosyaId);
-
-            Directory.CreateDirectory(tempKlasorYolu);
-
-            donenSonuc = new DonenSonuc
+            try
             {
-                Mesaj = "Temp Klasörüne oluşturuldu",
-                Sonuc = true
-            };
-            }catch (Exception e) {
+
+                string dosyaId = Guid.NewGuid().ToString();
+                string tempKlasorYolu = Path.Combine(rootPath, "temp", dosyaId);
+
+                Directory.CreateDirectory(tempKlasorYolu);
+
+                donenSonuc = new DonenSonuc
+                {
+                    Mesaj = "Temp Klasörüne oluşturuldu",
+                    Sonuc = true
+                };
+            }
+            catch (Exception e)
+            {
                 donenSonuc = new DonenSonuc
                 {
                     Mesaj = "Metod Çalıştırılırken Bir Sorunla Karşılaşıldı "
@@ -953,14 +953,23 @@ namespace MainRestApi.Controllers
             }
             return donenSonuc;
         }
-  
+
         [HttpPost]
-        public DonenSonuc DosyaParcalariYukle(Guid ID,int parcaNumarasi)
+        public DonenSonuc DosyaParcalariYukle(Guid ticketID, Guid klasorID, int parcaNumarasi)
         {
             DonenSonuc donenSonuc;
             try
             {
-                if (string.IsNullOrEmpty(ID.ToString()) )
+                if (ticketID != ticketGlobal.ID || string.IsNullOrEmpty(ticketID.ToString()))
+                {
+                    donenSonuc = new DonenSonuc
+                    {
+                        Mesaj = "Ticketlar uyuşmuyor",
+                        Sonuc = false
+                    };
+                    return donenSonuc;
+                }
+                if (string.IsNullOrEmpty(klasorID.ToString()))
                 {
                     donenSonuc = new DonenSonuc
                     {
@@ -970,8 +979,8 @@ namespace MainRestApi.Controllers
 
                     return donenSonuc;
                 }
-                string tempKlasorYolu = Path.Combine(rootPath, "temp", ID.ToString());
-               
+                string tempKlasorYolu = Path.Combine(rootPath, "temp", klasorID.ToString());
+
                 if (!Directory.Exists(tempKlasorYolu))
                 {
                     donenSonuc = new DonenSonuc
@@ -982,7 +991,7 @@ namespace MainRestApi.Controllers
                     return donenSonuc;
                 }
 
-                if (string.IsNullOrEmpty(ID.ToString()))
+                if (string.IsNullOrEmpty(klasorID.ToString()))
                 {
                     donenSonuc = new DonenSonuc
                     {
@@ -992,9 +1001,9 @@ namespace MainRestApi.Controllers
 
                     return donenSonuc;
                 }
-              
+
                 Stream stream = System.Web.HttpContext.Current.Request.GetBufferedInputStream();
-                
+
                 if (stream == null || stream.Length == 0)
                 {
                     donenSonuc = new DonenSonuc
@@ -1011,33 +1020,36 @@ namespace MainRestApi.Controllers
                     donenSonuc = new DonenSonuc
                     {
                         Sonuc = false,
-                        Mesaj = "Dosya Tek parça halinde gönderildi"
+                        Mesaj = "Dosya Boyutu 1 mb dan büyük"
                     };
 
                     return donenSonuc;
                 }
-                
-                string klasorYolu = Path.Combine(rootPath, "temp", ID.ToString());
- 
+
+                string klasorYolu = Path.Combine(rootPath, "temp", klasorID.ToString());
+
                 byte[] buffer = new byte[mb1];
-                using (StreamReader readStream = new StreamReader(stream)) {
-               
-                        using (FileStream cikti = new FileStream(Path.Combine(klasorYolu,parcaNumarasi.ToString()), FileMode.Create))
-                        {
+
+
+                using (StreamReader readStream = new StreamReader(stream))
+                {
+
+                    using (FileStream cikti = new FileStream(Path.Combine(klasorYolu, parcaNumarasi.ToString()), FileMode.Create))
+                    {
                         int bytesRead;
                         while ((bytesRead = readStream.BaseStream.Read(buffer, 0, buffer.Length)) > 0)
-                            {
+                        {
                             cikti.Write(buffer, 0, bytesRead);
-                            }
                         }
+                    }
 
                 }
                 donenSonuc = new DonenSonuc
-                    {
-                        Mesaj = "Parçalama İşlemi Başarılı",
+                {
+                    Mesaj = "Parçalama İşlemi Başarılı",
 
-                        Sonuc = true
-                    };
+                    Sonuc = true
+                };
 
             }
             catch (Exception e)
@@ -1049,21 +1061,29 @@ namespace MainRestApi.Controllers
                 logKayit(e, "DosyaParcalariYukle metodunda hata oluştu");
                 return donenSonuc;
             }
-            
+
             return donenSonuc;
         }
 
         [HttpPost]
-        public DonenSonuc DosyaYayinla(Guid ID,[FromBody] DosyaYayinlaBilgi dosyaBilgi)
+        public DonenSonuc DosyaYayinla(Guid ticketID, Guid klasorID, [FromBody] DosyaYayinlaBilgi dosyaBilgi)
         {
-            
-            //todo stream le yazdır
+
+
             DonenSonuc donenSonuc;
             try
             {
-               
+                if (ticketID != ticketGlobal.ID || string.IsNullOrEmpty(ticketID.ToString()))
+                {
+                    donenSonuc = new DonenSonuc
+                    {
+                        Mesaj = "Ticketlar uyuşmuyor",
+                        Sonuc = false
+                    };
+                    return donenSonuc;
+                }
 
-                if (string.IsNullOrEmpty(ID.ToString()) || string.IsNullOrEmpty(dosyaBilgi.DosyaAdi) || string.IsNullOrEmpty(dosyaBilgi.KlasorYolu))
+                if (string.IsNullOrEmpty(klasorID.ToString()) || string.IsNullOrEmpty(dosyaBilgi.DosyaAdi) || string.IsNullOrEmpty(dosyaBilgi.KlasorYolu))
                 {
                     donenSonuc = new DonenSonuc
                     {
@@ -1079,7 +1099,7 @@ namespace MainRestApi.Controllers
                 string dosyaAdi = dosyaBilgi.DosyaAdi;
                 string klasorYolu = dosyaBilgi.KlasorYolu;
                 string hedefYol = Path.Combine(rootPath, klasorYolu);
-                string tempKlasorYolu = Path.Combine(rootPath, "temp", ID.ToString());
+                string tempKlasorYolu = Path.Combine(rootPath, "temp", klasorID.ToString());
 
                 if (!Directory.Exists(Path.Combine(tempKlasorYolu)))
                 {
@@ -1098,7 +1118,7 @@ namespace MainRestApi.Controllers
                         Sonuc = false,
                         Mesaj = "Hedef Klasor Yolu Bulunamadı"
                     };
-                    
+
                     return donenSonuc;
                 }
                 hedefYol = Path.Combine(rootPath + klasorYolu, dosyaAdi);
@@ -1130,28 +1150,38 @@ namespace MainRestApi.Controllers
                 {
                     Mesaj = "Metod Çalıştırılırken Bir Sorunla Karşılaşıldı "
                 };
-                logKayit(e ,"Dosya Yayınlada problemle karşılaşıldı");
+                logKayit(e, "Dosya Yayınlada problemle karşılaşıldı");
                 return donenSonuc;
-                
+
             }
             return donenSonuc;
         }
 
         [HttpPost]
-        public DonenSonuc DosyaDirektYukle(string dosyaAdi,string klasorYolu)
+        public DonenSonuc DosyaDirektYukle(Guid ticketID, [FromBody] string DosyaAdi, string KlasorYolu)
         {
             DonenSonuc donenSonuc;
-            try {
-                if (string.IsNullOrEmpty(dosyaAdi) || string.IsNullOrEmpty(klasorYolu))
+            try
+            {
+                if (ticketID != ticketGlobal.ID || string.IsNullOrEmpty(ticketID.ToString()))
+                {
+                    donenSonuc = new DonenSonuc
+                    {
+                        Mesaj = "Ticketlar uyuşmuyor",
+                        Sonuc = false
+                    };
+                    return donenSonuc;
+                }
+                if (string.IsNullOrEmpty(DosyaAdi) || string.IsNullOrEmpty(KlasorYolu))
                 {
                     donenSonuc = new DonenSonuc
                     {
                         Sonuc = false,
-                        Mesaj="Boş Bırakılmış Değer veya Değerler Var",
+                        Mesaj = "Boş Bırakılmış Değer veya Değerler Var",
                     };
                     return donenSonuc;
                 }
-               
+
 
                 Stream stream = System.Web.HttpContext.Current.Request.InputStream;
                 if (stream == null || stream.Length == 0)
@@ -1164,10 +1194,10 @@ namespace MainRestApi.Controllers
 
                     return donenSonuc;
                 }
-                scriptEncodeInput(dosyaAdi);
-                scriptEncodeInput(klasorYolu);
-                
-                string hedefYol = Path.Combine(rootPath,klasorYolu, dosyaAdi);
+                scriptEncodeInput(DosyaAdi);
+                scriptEncodeInput(KlasorYolu);
+
+                string hedefYol = Path.Combine(rootPath, KlasorYolu, DosyaAdi);
                 using (FileStream olusturulacakDosya = File.Create(hedefYol))
                 {
                     stream.CopyTo(olusturulacakDosya);

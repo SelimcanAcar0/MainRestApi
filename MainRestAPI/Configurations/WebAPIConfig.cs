@@ -1,8 +1,5 @@
 ﻿using MainRestApi.Filters;
-using NLog.Web;
-using System;
 using System.Net.Http.Headers;
-using System.Runtime.Remoting.Contexts;
 using System.Web.Http;
 
 namespace MainRestApi.Configurations
@@ -25,5 +22,6 @@ namespace MainRestApi.Configurations
 
 
         }
+
     }
 }

@@ -240,6 +240,7 @@
     <Compile Include="Models\IsCepDeeplinkSchemaEmpty.cs" />
     <Compile Include="Models\IsCepState.cs" />
     <Compile Include="Models\Klasor.cs" />
+    <Compile Include="Models\KlasorListesiModel.cs" />
     <Compile Include="Models\Ticket.cs" />
     <Compile Include="obj\Debug\.NETFramework,Version=v4.6.1.AssemblyAttributes.cs" />
     <Compile Include="obj\Release\.NETFramework,Version=v4.6.1.AssemblyAttributes.cs" />
