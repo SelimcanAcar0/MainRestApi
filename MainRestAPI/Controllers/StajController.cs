@@ -25,8 +25,8 @@ namespace MainRestApi.Controllers
 
         private Ticket ticketGlobal = new Ticket
         {
-            ID = Guid.Parse("2b6c9bb0-1483-4a55-bf92-9274f2394ab7"),
-            KullaniciAdi = "Test",
+            ID = Guid.Parse("),
+            KullaniciAdi = "",
             Sonuc = true
         };
 
@@ -54,7 +54,7 @@ namespace MainRestApi.Controllers
         public Ticket TicketAl([FromBody] Kullanici kullanici)
         {
             Ticket ticket = new Ticket();
-            if (kullanici.KullaniciAdi == "Test" && kullanici.Sifre == "123456Abc.")
+            if (kullanici.KullaniciAdi == "" && kullanici.Sifre == "")
             {
                 ticket = ticketGlobal;
             }
