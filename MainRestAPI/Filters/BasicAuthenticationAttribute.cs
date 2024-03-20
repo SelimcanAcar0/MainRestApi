@@ -51,7 +51,7 @@ namespace MainRestApi.Filters
 
         public static bool IsAuthorizedUser(string Username, string Password)
         {
-            return Username == "NDSServis" && Password == "ca5094ef-eae0-4bd5-a94a-14db3b8f3950";
+            return Username == "" && Password == "";
         }
     }
 }
